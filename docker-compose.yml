@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: taskdb
+      POSTGRES_USER: taskuser
+      POSTGRES_PASSWORD: taskpass
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taskuser -d taskdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  app:
+    build: .
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/taskdb
+      DB_USERNAME: taskuser
+      DB_PASSWORD: taskpass
+      # Set a real secret in production; the app ships only a dev default.
+      JWT_SECRET: ${JWT_SECRET:-dev-only-change-me-in-production-0123456789abcdef-0123456789abcdef}
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  pgdata:
